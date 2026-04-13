@@ -1,0 +1,45 @@
+services:
+  # ── Python agent API (port 8001) ─────────────────────────────────────────────
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./agent/.env
+    environment:
+      CORS_ORIGINS: "http://localhost:4321,http://localhost:3000"
+    volumes:
+      # Persist base repo clones and SQLite DB across container restarts
+      - agent-data:/home/phoenix/.pnx
+    restart: unless-stopped
+
+  # ── Semantic similarity service (port 3001) ──────────────────────────────────
+  semantic:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./agent/.env
+    environment:
+      PORT: "3001"
+    command: ["python", "semantic_server.py"]
+    restart: unless-stopped
+
+  # ── Astro frontend (static build served by nginx) ────────────────────────────
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "4321:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+    depends_on:
+      - agent
+      - semantic
+    restart: unless-stopped
+
+volumes:
+  agent-data:

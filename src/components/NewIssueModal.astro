@@ -1,0 +1,83 @@
+---
+
+---
+
+<div
+  id="new-issue-modal"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm hidden"
+>
+  <div class="bg-surface-container-lowest rounded-xl p-6 w-full max-w-lg mx-4 shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-sm text-on-surface">New Issue</h2>
+      <button
+        id="new-issue-modal-close"
+        class="hover:bg-surface-container p-1.5 rounded text-on-surface-variant transition-colors"
+      >
+        <span class="material-symbols-outlined" style="font-size:18px">close</span>
+      </button>
+    </div>
+
+    <div class="space-y-3">
+      <div>
+        <label
+          class="block text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1"
+          >Title *</label
+        >
+        <input
+          id="new-issue-title"
+          type="text"
+          placeholder="Short, descriptive title"
+          class="w-full bg-surface-container-lowest px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/40 rounded-lg"
+          style="border:1px solid rgba(195,198,214,0.5)"
+        />
+      </div>
+
+      <div>
+        <label
+          class="block text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1"
+          >Description</label
+        >
+        <textarea
+          id="new-issue-body"
+          rows="5"
+          placeholder="What needs to be done? Include context, steps to reproduce, etc."
+          class="w-full bg-surface-container-lowest px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/40 rounded-lg resize-none"
+          style="border:1px solid rgba(195,198,214,0.5)"></textarea>
+      </div>
+
+      <div>
+        <label
+          class="block text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1"
+          >Labels <span class="font-normal normal-case">(comma-separated)</span></label
+        >
+        <input
+          id="new-issue-labels"
+          type="text"
+          placeholder="bug, enhancement, …"
+          class="w-full bg-surface-container-lowest px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/40 rounded-lg"
+          style="border:1px solid rgba(195,198,214,0.5)"
+        />
+      </div>
+    </div>
+
+    <p id="new-issue-error" class="text-[11px] text-error mt-3 hidden"></p>
+
+    <div class="flex gap-2 mt-4">
+      <button
+        id="new-issue-submit"
+        class="flex-1 text-sm font-semibold text-on-primary py-2 rounded-lg transition-all active:scale-95 flex items-center justify-center gap-1.5"
+        style="background:linear-gradient(135deg,#003d9b,#0052cc)"
+      >
+        <span class="material-symbols-outlined" style="font-size:14px">add_circle</span>
+        Create Issue
+      </button>
+      <button
+        id="new-issue-cancel"
+        class="text-sm font-medium text-on-surface-variant hover:text-on-surface px-4 rounded-lg transition-colors"
+        style="border:1px solid rgba(195,198,214,0.5)"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>

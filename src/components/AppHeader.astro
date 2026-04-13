@@ -1,0 +1,32 @@
+---
+
+---
+
+<header style="background:#e7e8ea" class="flex items-center px-4 h-12 flex-shrink-0 gap-3">
+  <span class="material-symbols-outlined text-primary" style="font-size:20px">view_kanban</span>
+  <span class="font-bold text-on-surface text-sm tracking-tight">Phoenix</span>
+
+  <!-- Repo switcher (hidden until a repo is loaded) -->
+  <span id="repo-switcher-sep" class="text-outline text-xs hidden">/</span>
+  <select
+    id="repo-switcher-select"
+    class="hidden text-xs text-on-surface bg-transparent border-none outline-none cursor-pointer hover:text-primary transition-colors font-medium"
+    title="Switch repository"
+  >
+  </select>
+
+  <div class="flex-1"></div>
+
+  <div id="stats-bar" class="hidden items-center gap-1 text-xs text-secondary">
+    <span class="material-symbols-outlined text-primary" style="font-size:13px">circle</span>
+    <span id="stat-open"></span>
+  </div>
+  <button
+    id="token-btn"
+    title="Set GitHub Token"
+    class="flex items-center gap-1.5 text-xs font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container px-2 py-1.5 rounded transition-colors"
+  >
+    <span class="material-symbols-outlined" style="font-size:15px">key</span>
+    Token
+  </button>
+</header>

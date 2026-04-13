@@ -1,0 +1,84 @@
+---
+
+---
+
+<!-- Coding Agent Picker Modal -->
+<div
+  id="coding-agent-modal"
+  class="hidden fixed inset-0 z-50 flex items-center justify-center"
+  style="background:rgba(0,0,0,0.4)"
+>
+  <div
+    class="rounded-2xl shadow-xl w-[480px] max-h-[90vh] overflow-y-auto"
+    style="background:#ffffff;border:1px solid rgba(195,198,214,0.4)"
+  >
+    <!-- Header -->
+    <div class="px-6 pt-6 pb-4">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-sm font-bold text-on-surface tracking-tight">Choose Your Coding Agent</h2>
+        <button
+          id="coding-agent-close"
+          class="text-on-surface-variant hover:text-on-surface transition-colors"
+          style="line-height:1"
+        >
+          <span class="material-symbols-outlined" style="font-size:18px">close</span>
+        </button>
+      </div>
+      <p class="text-[11px] text-on-surface-variant">
+        Select the default coding agent used when implementing issues.
+      </p>
+    </div>
+
+    <!-- Agent grid -->
+    <div id="coding-agent-grid" class="px-6 pb-6 grid grid-cols-2 gap-2"></div>
+  </div>
+</div>
+
+<script>
+  import { CODING_AGENTS } from '../lib/constants.js';
+  import { getCodingAgent, setCodingAgent } from '../lib/agents.js';
+
+  const modal = document.getElementById('coding-agent-modal');
+  const grid = document.getElementById('coding-agent-grid');
+  const closeBtn = document.getElementById('coding-agent-close');
+
+  function renderGrid() {
+    const current = getCodingAgent();
+    grid.innerHTML = CODING_AGENTS.map((agent) => {
+      const selected = agent.id === current.id;
+      return `
+        <button data-agent-id="${agent.id}"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all"
+          style="
+            background:${selected ? agent.bg : '#f8f9fa'};
+            border:1.5px solid ${selected ? agent.color + '60' : 'rgba(195,198,214,0.4)'};
+          ">
+          <span class="text-xl w-7 text-center shrink-0" style="color:${agent.color}">${agent.symbol}</span>
+          <span class="text-xs font-semibold text-on-surface flex-1">${agent.name}</span>
+          ${
+            selected
+              ? `<span class="material-symbols-outlined shrink-0" style="font-size:15px;color:${agent.color}">check</span>`
+              : ''
+          }
+        </button>`;
+    }).join('');
+
+    grid.querySelectorAll('[data-agent-id]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setCodingAgent(btn.dataset.agentId);
+        renderGrid();
+      });
+    });
+  }
+
+  // Open / close
+  closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.add('hidden');
+  });
+
+  document.addEventListener('open-coding-agent-modal', () => {
+    renderGrid();
+    modal.classList.remove('hidden');
+  });
+</script>

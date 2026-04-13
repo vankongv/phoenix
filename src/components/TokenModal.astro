@@ -1,0 +1,51 @@
+---
+
+---
+
+<div
+  id="token-modal"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm hidden"
+>
+  <div class="bg-surface-container-lowest rounded-xl p-6 w-full max-w-sm mx-4 shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-sm text-on-surface">GitHub Token</h2>
+      <button
+        id="token-modal-close"
+        class="hover:bg-surface-container p-1.5 rounded text-on-surface-variant transition-colors"
+      >
+        <span class="material-symbols-outlined" style="font-size:18px">close</span>
+      </button>
+    </div>
+    <p class="text-xs text-on-surface-variant mb-3 leading-relaxed">
+      Personal access token with <code
+        class="bg-surface-container px-1 rounded text-primary font-mono">repo</code
+      > scope for private repos and higher rate limits. Stored in <code
+        class="bg-surface-container px-1 rounded text-primary font-mono">localStorage</code
+      >.
+    </p>
+    <input
+      id="token-input"
+      type="password"
+      placeholder="ghp_••••••••••••••••••••"
+      class="w-full bg-surface-container-lowest px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/40 rounded-lg mb-3"
+      style="border:1px solid rgba(195,198,214,0.5)"
+    />
+    <div class="flex gap-2">
+      <button
+        id="token-save"
+        class="flex-1 text-sm font-semibold text-on-primary py-2 rounded-lg transition-all active:scale-95"
+        style="background:linear-gradient(135deg,#003d9b,#0052cc)"
+      >
+        Save Token
+      </button>
+      <button
+        id="token-clear"
+        class="text-sm font-medium text-on-surface-variant hover:text-on-surface px-3 rounded-lg transition-colors"
+        style="border:1px solid rgba(195,198,214,0.5)"
+      >
+        Clear
+      </button>
+    </div>
+    <p id="token-status" class="text-[11px] mt-2 hidden"></p>
+  </div>
+</div>

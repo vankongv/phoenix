@@ -1,0 +1,487 @@
+---
+
+---
+
+<div id="settings-panel" class="fixed inset-0 z-50 hidden flex-col bg-surface overflow-hidden">
+  <!-- ── Top bar ── -->
+  <header
+    class="flex items-center justify-between px-6 flex-shrink-0"
+    style="background:#fff;border-bottom:1px solid rgba(195,198,214,0.2);height:52px"
+  >
+    <div class="flex items-center gap-3">
+      <button
+        id="settings-panel-close"
+        class="flex items-center gap-1.5 text-[13px] font-medium transition-colors"
+        style="color:#6b7280"
+      >
+        <span class="material-symbols-outlined" style="font-size:15px">arrow_back</span>
+        Board
+      </button>
+      <span class="select-none text-[11px]" style="color:rgba(195,198,214,0.7)">|</span>
+      <div class="flex items-center gap-2">
+        <div
+          class="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+          style="background:#434654"
+        >
+          <span class="material-symbols-outlined" style="font-size:14px;color:#fff">settings</span>
+        </div>
+        <h1 class="text-[13px] font-bold" style="color:#191c1e;font-family:'Manrope',sans-serif">
+          Settings
+        </h1>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Body ── -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Left nav -->
+    <aside
+      class="w-48 bg-surface-container-lowest flex-shrink-0 flex flex-col pt-5 pb-6 px-3 gap-0.5"
+      style="border-right:1px solid rgba(195,198,214,0.18)"
+    >
+      <p
+        class="text-[9px] font-black uppercase tracking-[0.12em] px-3 pb-2.5"
+        style="color:#a0a3b0"
+      >
+        Configuration
+      </p>
+      <button
+        data-settings-nav="editor"
+        class="settings-nav active flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold w-full text-left transition-all"
+      >
+        <span class="material-symbols-outlined" style="font-size:16px">code</span>
+        Code Editor
+      </button>
+      <button
+        data-settings-nav="ai"
+        class="settings-nav flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold w-full text-left transition-all"
+      >
+        <span class="material-symbols-outlined" style="font-size:16px">auto_awesome</span>
+        AI
+      </button>
+      <button
+        data-settings-nav="github"
+        class="settings-nav flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold w-full text-left transition-all"
+      >
+        <span class="material-symbols-outlined" style="font-size:16px">key</span>
+        GitHub
+      </button>
+      <button
+        data-settings-nav="history"
+        class="settings-nav flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold w-full text-left transition-all"
+      >
+        <span class="material-symbols-outlined" style="font-size:16px">history</span>
+        History
+      </button>
+    </aside>
+
+    <!-- Main content -->
+    <main
+      class="flex-1 overflow-y-auto px-8 py-7"
+      style="background:#f4f5f8;scrollbar-width:thin;scrollbar-color:#c3c6d6 transparent"
+    >
+      <div class="max-w-2xl space-y-8">
+        <!-- ══ Code Editor ══ -->
+        <section id="settings-section-editor">
+          <div class="mb-5">
+            <h2
+              class="text-lg font-bold tracking-tight"
+              style="color:#191c1e;font-family:'Manrope',sans-serif"
+            >
+              Code Editor
+            </h2>
+            <p class="text-[12px] mt-0.5 max-w-md leading-relaxed" style="color:#6b6f80">
+              When an agent is working on a worktree, use this editor to open and edit the code
+              alongside it.
+            </p>
+          </div>
+
+          <div id="settings-editor-list" class="grid grid-cols-2 gap-3"></div>
+        </section>
+
+        <!-- ══ AI ══ -->
+        <section id="settings-section-ai" class="hidden">
+          <div class="mb-5">
+            <h2
+              class="text-lg font-bold tracking-tight"
+              style="color:#191c1e;font-family:'Manrope',sans-serif"
+            >
+              AI
+            </h2>
+            <p class="text-[12px] mt-0.5 max-w-md leading-relaxed" style="color:#6b6f80">
+              Default AI provider and API key used by agents. Each agent can override this in its own settings.
+            </p>
+          </div>
+
+          <div
+            class="bg-surface-container-lowest rounded-xl p-5 space-y-4"
+            style="border:1.5px solid rgba(195,198,214,0.4)"
+          >
+            <!-- Provider selector -->
+            <div>
+              <p class="text-[12px] font-semibold mb-2.5" style="color:#434654">Provider</p>
+              <div id="ai-provider-grid" class="grid grid-cols-3 gap-2"></div>
+            </div>
+
+            <div style="border-top:1px solid rgba(195,198,214,0.3)"></div>
+
+            <!-- API key -->
+            <div>
+              <p class="text-[12px] font-semibold mb-2" style="color:#434654">API Key</p>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <input
+                    id="ai-key-input"
+                    type="password"
+                    placeholder="Paste your API key…"
+                    autocomplete="off"
+                    class="w-full text-[12px] px-3 py-2.5 rounded-lg font-mono"
+                    style="border:1.5px solid rgba(195,198,214,0.5);background:#f9f9fb;color:#191c1e;outline:none"
+                  />
+                  <button
+                    id="ai-key-toggle"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2"
+                    style="color:#9ca3af"
+                  >
+                    <span class="material-symbols-outlined" style="font-size:16px">visibility</span>
+                  </button>
+                </div>
+                <button
+                  id="ai-key-save"
+                  class="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-lg transition-all active:scale-95 shrink-0"
+                  style="background:#003d9b;color:#fff"
+                >
+                  Save
+                </button>
+              </div>
+              <p id="ai-key-saved-msg" class="text-[11px] mt-2 hidden" style="color:#1a7a4a">
+                Saved.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ GitHub ══ -->
+        <section id="settings-section-github" class="hidden">
+          <div class="mb-5">
+            <h2
+              class="text-lg font-bold tracking-tight"
+              style="color:#191c1e;font-family:'Manrope',sans-serif"
+            >
+              GitHub
+            </h2>
+            <p class="text-[12px] mt-0.5 max-w-md leading-relaxed" style="color:#6b6f80">
+              Personal Access Token with <code style="background:#f3f4f6;padding:1px 4px;border-radius:3px">repo</code> scope. Stored locally in your browser.
+            </p>
+          </div>
+
+          <div
+            class="bg-surface-container-lowest rounded-xl p-5 space-y-4"
+            style="border:1.5px solid rgba(195,198,214,0.4)"
+          >
+            <div>
+              <p class="text-[12px] font-semibold mb-2" style="color:#434654">Token</p>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <input
+                    id="gh-token-input"
+                    type="password"
+                    placeholder="ghp_…"
+                    autocomplete="off"
+                    class="w-full text-[12px] px-3 py-2.5 rounded-lg font-mono"
+                    style="border:1.5px solid rgba(195,198,214,0.5);background:#f9f9fb;color:#191c1e;outline:none"
+                  />
+                  <button
+                    id="gh-token-toggle"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2"
+                    style="color:#9ca3af"
+                  >
+                    <span class="material-symbols-outlined" style="font-size:16px">visibility</span>
+                  </button>
+                </div>
+                <button
+                  id="gh-token-save"
+                  class="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-lg transition-all active:scale-95 shrink-0"
+                  style="background:#003d9b;color:#fff"
+                >
+                  Save
+                </button>
+                <button
+                  id="gh-token-clear"
+                  class="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 rounded-lg transition-all active:scale-95 shrink-0"
+                  style="background:#fef2f2;color:#ba1a1a;border:1px solid #fca5a5"
+                >
+                  Clear
+                </button>
+              </div>
+              <p id="gh-token-saved-msg" class="text-[11px] mt-2 hidden" style="color:#1a7a4a">
+                Saved.
+              </p>
+              <p id="gh-token-cleared-msg" class="text-[11px] mt-2 hidden" style="color:#6b6f80">
+                Token cleared.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══ History ══ -->
+        <section id="settings-section-history" class="hidden">
+          <div class="mb-5">
+            <h2
+              class="text-lg font-bold tracking-tight"
+              style="color:#191c1e;font-family:'Manrope',sans-serif"
+            >
+              History
+            </h2>
+            <p class="text-[12px] mt-0.5 max-w-md leading-relaxed" style="color:#6b6f80">
+              Agent logs and card lane positions are saved locally in your browser.
+            </p>
+          </div>
+
+          <div
+            class="bg-surface-container-lowest rounded-xl p-5 space-y-4"
+            style="border:1.5px solid rgba(195,198,214,0.4)"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-[13px] font-semibold text-on-surface">Agent logs</p>
+                <p class="text-[11px] mt-0.5 leading-relaxed" style="color:#6b6f80">
+                  All agent run logs stored in this browser.
+                </p>
+              </div>
+              <button
+                id="clear-logs-btn"
+                class="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95 shrink-0"
+                style="background:#fef2f2;color:#ba1a1a;border:1px solid #fca5a5"
+              >
+                <span class="material-symbols-outlined" style="font-size:14px">delete_sweep</span>
+                Clear logs
+              </button>
+            </div>
+            <div style="border-top:1px solid rgba(195,198,214,0.3)"></div>
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-[13px] font-semibold text-on-surface">Card lane positions</p>
+                <p class="text-[11px] mt-0.5 leading-relaxed" style="color:#6b6f80">
+                  Manual card moves that override default GitHub label assignment.
+                </p>
+              </div>
+              <button
+                id="clear-lanes-btn"
+                class="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95 shrink-0"
+                style="background:#fef2f2;color:#ba1a1a;border:1px solid #fca5a5"
+              >
+                <span class="material-symbols-outlined" style="font-size:14px">delete_sweep</span>
+                Clear positions
+              </button>
+            </div>
+            <div style="border-top:1px solid rgba(195,198,214,0.3)"></div>
+            <div class="flex items-center justify-between gap-4">
+              <p class="text-[12px] font-semibold text-on-surface-variant">Clear everything</p>
+              <button
+                id="clear-all-history-btn"
+                class="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                style="background:#ba1a1a;color:#fff"
+              >
+                <span class="material-symbols-outlined" style="font-size:14px">delete_forever</span>
+                Clear all history
+              </button>
+            </div>
+          </div>
+          <p id="history-cleared-msg" class="text-[11px] mt-3 hidden" style="color:#1a7a4a">
+            Cleared successfully.
+          </p>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<style>
+  .settings-nav {
+    color: #6b7280;
+  }
+  .settings-nav:hover {
+    background: #f3f4f6;
+    color: #191c1e;
+  }
+  .settings-nav.active {
+    background: #eff6ff;
+    color: #003d9b;
+  }
+</style>
+
+<script>
+  import { CODE_EDITORS } from '../lib/constants.js';
+  import { getCodeEditor, setCodeEditor, getGlobalAiKey, setGlobalAiKey, getGlobalAiProvider, setGlobalAiProvider } from '../lib/agents.js';
+  import { clearHistory } from '../lib/implementer.js';
+  import { clearCardLanes } from '../lib/board.js';
+
+  const AI_PROVIDERS = [
+    { id: 'claude', label: 'Claude', icon: 'auto_awesome' },
+    { id: 'openai', label: 'OpenAI', icon: 'smart_toy' },
+    { id: 'copilot', label: 'Copilot', icon: 'code' },
+  ];
+
+  const panel = document.getElementById('settings-panel');
+
+  function renderEditorGrid() {
+    const list = document.getElementById('settings-editor-list');
+    if (!list) return;
+    const current = getCodeEditor();
+    list.innerHTML = CODE_EDITORS.map((e) => {
+      const selected = e.id === current.id;
+      return `
+        <button data-editor-id="${e.id}"
+          class="flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all"
+          style="
+            background:${selected ? '#eff6ff' : '#ffffff'};
+            border:1.5px solid ${selected ? '#003d9b40' : 'rgba(195,198,214,0.4)'};
+          ">
+          <span class="material-symbols-outlined shrink-0" style="font-size:20px;color:${selected ? '#003d9b' : '#737685'}">${e.icon}</span>
+          <span class="text-[13px] font-semibold flex-1" style="color:${selected ? '#003d9b' : '#434654'}">${e.name}</span>
+          ${
+            selected
+              ? '<span class="material-symbols-outlined shrink-0" style="font-size:16px;color:#003d9b">check</span>'
+              : ''
+          }
+        </button>`;
+    }).join('');
+
+    list.querySelectorAll('[data-editor-id]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setCodeEditor(btn.dataset.editorId);
+        renderEditorGrid();
+      });
+    });
+  }
+
+  // ── AI provider grid ──────────────────────────────────────────
+  function renderAiProviderGrid() {
+    const grid = document.getElementById('ai-provider-grid');
+    if (!grid) return;
+    const current = getGlobalAiProvider();
+    grid.innerHTML = AI_PROVIDERS.map((p) => {
+      const selected = p.id === current;
+      return `<button data-ai-provider="${p.id}"
+        class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-all"
+        style="background:${selected ? '#eff6ff' : '#ffffff'};border:1.5px solid ${selected ? '#003d9b40' : 'rgba(195,198,214,0.4)'}">
+        <span class="material-symbols-outlined shrink-0" style="font-size:16px;color:${selected ? '#003d9b' : '#737685'}">${p.icon}</span>
+        <span class="text-[12px] font-semibold" style="color:${selected ? '#003d9b' : '#434654'}">${p.label}</span>
+      </button>`;
+    }).join('');
+    grid.querySelectorAll('[data-ai-provider]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setGlobalAiProvider((btn as HTMLButtonElement).dataset.aiProvider ?? 'claude');
+        renderAiProviderGrid();
+      });
+    });
+  }
+
+  function initAiSection() {
+    renderAiProviderGrid();
+    const input = document.getElementById('ai-key-input') as HTMLInputElement;
+    if (input) input.value = getGlobalAiKey();
+
+    document.getElementById('ai-key-toggle')?.addEventListener('click', () => {
+      input.type = input.type === 'password' ? 'text' : 'password';
+      const icon = document.querySelector('#ai-key-toggle .material-symbols-outlined');
+      if (icon) icon.textContent = input.type === 'password' ? 'visibility' : 'visibility_off';
+    });
+
+    document.getElementById('ai-key-save')?.addEventListener('click', () => {
+      setGlobalAiKey(input.value.trim());
+      const msg = document.getElementById('ai-key-saved-msg');
+      if (!msg) return;
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 2000);
+    });
+  }
+
+  // ── GitHub token section ──────────────────────────────────────
+  function initGithubSection() {
+    const input = document.getElementById('gh-token-input') as HTMLInputElement;
+    if (input) input.value = localStorage.getItem('gh_token') || '';
+
+    document.getElementById('gh-token-toggle')?.addEventListener('click', () => {
+      input.type = input.type === 'password' ? 'text' : 'password';
+      const icon = document.querySelector('#gh-token-toggle .material-symbols-outlined');
+      if (icon) icon.textContent = input.type === 'password' ? 'visibility' : 'visibility_off';
+    });
+
+    document.getElementById('gh-token-save')?.addEventListener('click', () => {
+      const val = input.value.trim();
+      if (val) localStorage.setItem('gh_token', val);
+      const msg = document.getElementById('gh-token-saved-msg');
+      if (!msg) return;
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 2000);
+    });
+
+    document.getElementById('gh-token-clear')?.addEventListener('click', () => {
+      localStorage.removeItem('gh_token');
+      input.value = '';
+      const msg = document.getElementById('gh-token-cleared-msg');
+      if (!msg) return;
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 2000);
+    });
+  }
+
+  // ── Nav switching ─────────────────────────────────────────────
+  const SECTIONS = ['editor', 'ai', 'github', 'history'];
+
+  function showSection(name: string) {
+    document.querySelectorAll('[data-settings-nav]').forEach((btn) => {
+      btn.classList.toggle('active', (btn as HTMLElement).dataset.settingsNav === name);
+    });
+    SECTIONS.forEach((s) => {
+      document.getElementById(`settings-section-${s}`)?.classList.toggle('hidden', s !== name);
+    });
+  }
+
+  document.querySelectorAll('[data-settings-nav]').forEach((btn) => {
+    btn.addEventListener('click', () =>
+      showSection((btn as HTMLElement).dataset.settingsNav ?? '')
+    );
+  });
+
+  // ── History buttons ───────────────────────────────────────────
+  function flashCleared() {
+    const msg = document.getElementById('history-cleared-msg');
+    if (!msg) return;
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 2000);
+  }
+
+  document.getElementById('clear-logs-btn')?.addEventListener('click', () => {
+    clearHistory();
+    flashCleared();
+  });
+
+  document.getElementById('clear-lanes-btn')?.addEventListener('click', () => {
+    clearCardLanes();
+    flashCleared();
+  });
+
+  document.getElementById('clear-all-history-btn')?.addEventListener('click', () => {
+    clearHistory();
+    clearCardLanes();
+    flashCleared();
+  });
+
+  // ── Open/close ────────────────────────────────────────────────
+  document.getElementById('settings-panel-close')?.addEventListener('click', () => {
+    panel?.classList.add('hidden');
+    panel?.classList.remove('flex');
+  });
+
+  document.addEventListener('open-settings-panel', () => {
+    renderEditorGrid();
+    initAiSection();
+    initGithubSection();
+    showSection('editor');
+    panel?.classList.remove('hidden');
+    panel?.classList.add('flex');
+  });
+</script>

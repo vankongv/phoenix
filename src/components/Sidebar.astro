@@ -1,0 +1,177 @@
+---
+
+---
+
+<aside
+  style="background:#f3f4f6;width:220px;flex-shrink:0"
+  class="flex flex-col h-full px-2 py-3 gap-1 overflow-y-auto"
+>
+  <div class="px-1 mb-3">
+    <p
+      class="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/60 mb-1.5 px-1"
+    >
+      Repository
+    </p>
+
+    <!-- State: no token -->
+    <div id="repo-no-token" class="text-center py-2">
+      <p class="text-[10px] text-on-surface-variant/50 mb-2 leading-snug">
+        Add a GitHub token<br />to see your repos
+      </p>
+      <button
+        id="repo-set-token-btn"
+        class="w-full text-xs font-semibold py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors"
+        style="background:rgba(0,61,155,0.1);color:#003d9b"
+      >
+        <span class="material-symbols-outlined" style="font-size:13px">key</span>
+        Set Token
+      </button>
+    </div>
+
+    <!-- State: loading repos -->
+    <div id="repo-loading" class="hidden text-center py-3">
+      <span class="text-[10px] text-on-surface-variant/50 animate-pulse">Loading repos…</span>
+    </div>
+
+    <!-- State: repo selected -->
+    <div id="repo-selected-wrap" class="hidden">
+      <div
+        class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+        style="background:rgba(0,61,155,0.08)"
+      >
+        <span class="material-symbols-outlined text-primary" style="font-size:13px">folder</span>
+        <span id="repo-selected-name" class="text-xs font-medium text-on-surface truncate flex-1"
+        ></span>
+        <button
+          id="repo-change-btn"
+          class="text-on-surface-variant/50 hover:text-primary transition-colors flex-shrink-0"
+          title="Change repo"
+        >
+          <span class="material-symbols-outlined" style="font-size:13px">edit</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- State: repo list -->
+    <div id="repo-list-wrap" class="hidden">
+      <input
+        id="repo-search"
+        type="text"
+        placeholder="Filter repos…"
+        class="w-full bg-surface-container-lowest px-2.5 py-1.5 text-xs text-on-surface placeholder:text-on-surface-variant/40 rounded-lg mb-1.5"
+        style="border:1px solid rgba(195,198,214,0.5)"
+      />
+      <div id="repo-list" class="overflow-y-auto" style="max-height:200px"></div>
+    </div>
+
+    <!-- State: error fetching repos -->
+    <div id="repo-fetch-error" class="hidden px-1 py-2">
+      <p class="text-[10px] text-error mb-1.5" id="repo-fetch-error-text">Could not load repos.</p>
+      <button id="repo-retry-btn" class="text-[10px] font-semibold text-primary underline"
+        >Retry</button
+      >
+    </div>
+
+    <!-- Manual fallback (always accessible) -->
+    <button
+      id="repo-manual-toggle"
+      class="w-full text-[10px] text-on-surface-variant/40 hover:text-primary text-center mt-1 transition-colors"
+    >
+      enter repo manually
+    </button>
+    <div id="repo-manual-wrap" class="hidden mt-1.5">
+      <input
+        id="repo-input"
+        type="text"
+        placeholder="owner / repo"
+        class="w-full bg-surface-container-lowest px-3 py-2 text-xs text-on-surface placeholder:text-on-surface-variant/40 rounded-lg mb-2"
+        style="border:1px solid rgba(195,198,214,0.5)"
+      />
+      <button
+        id="load-btn"
+        class="w-full text-xs font-semibold text-on-primary py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95"
+        style="background:linear-gradient(135deg,#003d9b,#0052cc)"
+      >
+        <span class="material-symbols-outlined" style="font-size:14px">download</span>
+        Load Issues
+      </button>
+    </div>
+  </div>
+
+  <p
+    class="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/60 mb-1 px-1"
+  >
+    Views
+  </p>
+  <button class="nav-item active">
+    <span class="material-symbols-outlined" style="font-size:15px">view_kanban</span>
+    Board
+  </button>
+  <button id="planning-btn" class="nav-item text-secondary hover:text-primary">
+    <span class="material-symbols-outlined" style="font-size:15px">book_2</span>
+    Planning
+  </button>
+
+  <div class="flex-1"></div>
+  <button id="teams-btn" class="nav-item text-secondary hover:text-primary">
+    <span class="material-symbols-outlined" style="font-size:15px">group_work</span>
+    Teams
+  </button>
+  <button id="agents-btn" class="nav-item text-secondary hover:text-primary">
+    <span class="material-symbols-outlined" style="font-size:15px">hub</span>
+    Agents
+  </button>
+  <button id="agent-rail-btn" class="nav-item text-secondary hover:text-primary">
+    <span class="material-symbols-outlined" style="font-size:15px">view_sidebar</span>
+    Agent Rail
+  </button>
+  <button id="demo-btn" class="nav-item text-secondary hover:text-primary">
+    <span class="material-symbols-outlined" style="font-size:15px">play_circle</span>
+    Try demo
+  </button>
+  <button id="settings-btn" class="nav-item text-secondary hover:text-primary">
+    <span class="material-symbols-outlined" style="font-size:15px">settings</span>
+    Settings
+  </button>
+
+  <!-- Service health indicators -->
+  <div class="mt-2 px-2 py-2 rounded-lg space-y-1.5" style="background:rgba(195,198,214,0.15)">
+    <p class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/50 px-1">
+      Services
+    </p>
+    <div class="flex items-center gap-2 px-1">
+      <span
+        id="health-agent-dot"
+        class="w-2 h-2 rounded-full flex-shrink-0"
+        style="background:#c3c6d6"></span>
+      <span class="text-[10px] text-on-surface-variant/70">Agent server</span>
+      <span id="health-agent-label" class="text-[9px] ml-auto font-semibold" style="color:#c3c6d6"
+        >…</span
+      >
+    </div>
+    <div class="flex items-center gap-2 px-1">
+      <span
+        id="health-semantic-dot"
+        class="w-2 h-2 rounded-full flex-shrink-0"
+        style="background:#c3c6d6"></span>
+      <span class="text-[10px] text-on-surface-variant/70">Semantic API</span>
+      <span
+        id="health-semantic-label"
+        class="text-[9px] ml-auto font-semibold"
+        style="color:#c3c6d6">…</span
+      >
+    </div>
+  </div>
+</aside>
+
+<script>
+  const settingsBtn = document.getElementById('settings-btn');
+  settingsBtn?.addEventListener('click', () => {
+    document.dispatchEvent(new CustomEvent('open-settings-panel'));
+  });
+
+  const planningBtn = document.getElementById('planning-btn');
+  planningBtn?.addEventListener('click', () => {
+    document.dispatchEvent(new CustomEvent('open-planning-panel'));
+  });
+</script>
