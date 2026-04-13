@@ -6,6 +6,8 @@
  */
 import { useState } from 'preact/hooks';
 import { runsSignal, logsSignal, runHistoryOpenSignal, clearHistory } from '../../lib/signals.js';
+import { createIssue } from '../../lib/github-api.js';
+import { state } from '../../scripts/state.js';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -81,6 +83,236 @@ function FilterBtn({
   );
 }
 
+// ── Bug report helpers ────────────────────────────────────────────────────────
+
+function buildBugReportBody(
+  issueNumber: number,
+  run: Run,
+  logs: LogEntry[],
+  userDescription: string
+): string {
+  const status = STATUS_CFG[run.status]?.label ?? run.status;
+  const action = run.actionType
+    ? run.actionType.charAt(0).toUpperCase() + run.actionType.slice(1)
+    : 'Run';
+
+  const lines: string[] = [
+    `## 🐛 Bug Report — Agent Run for Issue #${issueNumber}`,
+    '',
+    `| Field | Value |`,
+    `|-------|-------|`,
+    `| **Status** | ${status} |`,
+    `| **Action** | ${action} |`,
+    `| **Last Step** | ${run.step ?? '—'} |`,
+  ];
+
+  if ((run as any).model) lines.push(`| **Model** | ${(run as any).model} |`);
+  if (run.prUrl) lines.push(`| **PR** | ${run.prUrl} |`);
+
+  if (userDescription.trim()) {
+    lines.push('', '### Description', '', userDescription.trim());
+  }
+
+  if (logs.length > 0) {
+    lines.push('', '### Agent Logs', '', '<details>', '<summary>Full log output (' + logs.length + ' entries)</summary>', '');
+    lines.push('| Time | Type | Message |', '|------|------|---------|');
+    for (const entry of logs) {
+      const time = entry.ts
+        ? new Date(entry.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        : '—';
+      const msg = (entry.message ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ').slice(0, 200);
+      lines.push(`| ${time} | ${entry.type} | ${msg} |`);
+    }
+    lines.push('', '</details>');
+  }
+
+  lines.push('', '---', '*This bug report was automatically generated from Phoenix agent logs.*');
+  return lines.join('\n');
+}
+
+function BugReportForm({
+  issueNumber,
+  run,
+  logs,
+  onClose,
+}: {
+  issueNumber: number;
+  run: Run;
+  logs: LogEntry[];
+  onClose: () => void;
+}) {
+  const defaultTitle = `[Bug] Agent ${run.actionType ?? 'run'} failed for Issue #${issueNumber}`;
+  const [title, setTitle] = useState(defaultTitle);
+  const [description, setDescription] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    const repo = (state.issueSourceRepo || state.repoFullName) as string | null;
+    if (!repo) {
+      setError('No repository selected. Load a repo first.');
+      return;
+    }
+    if (!title.trim()) {
+      setError('Title is required.');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const body = buildBugReportBody(issueNumber, run, logs, description);
+      const created = await createIssue(repo, { title: title.trim(), body, labels: ['bug'] });
+      setCreatedUrl(created.html_url);
+    } catch (err: any) {
+      setError(err.userMessage ?? err.message ?? 'Failed to create bug report');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (createdUrl) {
+    return (
+      <div
+        class="mx-4 my-3 rounded-lg p-4"
+        style="background:#f0fdf4;border:1.5px solid rgba(22,163,74,0.2)"
+      >
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined" style="font-size:16px;color:#16a34a">
+            check_circle
+          </span>
+          <p class="text-[12px] font-bold" style="color:#16a34a">
+            Bug report created
+          </p>
+        </div>
+        <a
+          href={createdUrl}
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-1 text-[11px] font-semibold hover:underline"
+          style="color:#1d4ed8"
+        >
+          <span class="material-symbols-outlined" style="font-size:12px">open_in_new</span>
+          View on GitHub
+        </a>
+        <div class="mt-2">
+          <button
+            onClick={onClose}
+            class="text-[11px] font-medium transition-colors"
+            style="color:#6b7280"
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      class="mx-4 my-3 rounded-lg overflow-hidden"
+      style="background:#fff;border:1.5px solid rgba(186,26,26,0.2)"
+    >
+      <div
+        class="flex items-center gap-2 px-4 py-2.5"
+        style="background:rgba(186,26,26,0.04);border-bottom:1px solid rgba(186,26,26,0.1)"
+      >
+        <span class="material-symbols-outlined" style="font-size:14px;color:#ba1a1a">
+          bug_report
+        </span>
+        <p class="text-[12px] font-bold" style="color:#ba1a1a">
+          Report Bug
+        </p>
+        <button
+          onClick={onClose}
+          class="ml-auto"
+          style="color:#a0a3b0"
+        >
+          <span class="material-symbols-outlined" style="font-size:14px">close</span>
+        </button>
+      </div>
+
+      <div class="px-4 py-3 space-y-3">
+        <div>
+          <label class="block text-[10px] font-semibold uppercase tracking-wider mb-1" style="color:#6b6f80">
+            Title
+          </label>
+          <input
+            type="text"
+            value={title}
+            onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
+            class="w-full text-[11px] px-2.5 py-1.5 rounded-lg focus:outline-none"
+            style="background:#f8f9fb;border:1.5px solid rgba(195,198,214,0.4);color:#191c1e"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-semibold uppercase tracking-wider mb-1" style="color:#6b6f80">
+            Description <span class="font-normal normal-case">(optional)</span>
+          </label>
+          <textarea
+            value={description}
+            onInput={(e) => setDescription((e.target as HTMLTextAreaElement).value)}
+            rows={3}
+            placeholder="Describe what went wrong…"
+            class="w-full text-[11px] px-2.5 py-1.5 rounded-lg resize-none focus:outline-none"
+            style="background:#f8f9fb;border:1.5px solid rgba(195,198,214,0.4);color:#191c1e"
+          />
+        </div>
+
+        <div
+          class="rounded-md px-3 py-2"
+          style="background:#f8f9fb;border:1px solid rgba(195,198,214,0.25)"
+        >
+          <p class="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style="color:#a0a3b0">
+            Auto-attached info
+          </p>
+          <div class="space-y-0.5">
+            {[
+              `Run status: ${STATUS_CFG[run.status]?.label ?? run.status}`,
+              `Action: ${run.actionType ?? 'run'}`,
+              `Last step: ${run.step ?? '—'}`,
+              `${logs.length} log entries`,
+            ].map((line, i) => (
+              <p key={i} class="text-[10px]" style="color:#6b6f80">
+                <span class="material-symbols-outlined align-middle mr-1" style="font-size:10px;color:#a0a3b0">
+                  attach_file
+                </span>
+                {line}
+              </p>
+            ))}
+          </div>
+        </div>
+
+        {error && (
+          <p class="text-[11px]" style="color:#ba1a1a">{error}</p>
+        )}
+
+        <div class="flex gap-2">
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            class="flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold py-2 rounded-lg transition-all disabled:opacity-50"
+            style="background:linear-gradient(135deg,#9a1b1b,#ba1a1a);color:#fff"
+          >
+            <span class="material-symbols-outlined" style="font-size:13px">
+              {submitting ? 'hourglass_empty' : 'bug_report'}
+            </span>
+            {submitting ? 'Creating…' : 'Create Bug Report'}
+          </button>
+          <button
+            onClick={onClose}
+            class="text-[11px] font-medium px-3 py-2 rounded-lg transition-colors"
+            style="color:#6b6f80;border:1.5px solid rgba(195,198,214,0.4)"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function RunHistoryPanel() {
@@ -88,6 +320,7 @@ export default function RunHistoryPanel() {
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [selectedIssue, setSelectedIssue] = useState<number | null>(null);
+  const [bugReportOpen, setBugReportOpen] = useState(false);
 
   // Signal subscriptions — auto re-render on change
   const isOpen = runHistoryOpenSignal.value;
