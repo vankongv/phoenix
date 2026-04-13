@@ -249,7 +249,7 @@ function CommentsSection({ issue }: { issue: Issue }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const repo = state.repoFullName as string | null;
+  const repo = (state.issueSourceRepo || state.repoFullName) as string | null;
 
   useEffect(() => {
     if (!repo) { setLoading(false); return; }
@@ -415,7 +415,7 @@ function AssigneeEditor({
   const ref = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const isLocal = !!(issue as any)._local;
-  const repo = state.repoFullName as string | null;
+  const repo = (state.issueSourceRepo || state.repoFullName) as string | null;
 
   useEffect(() => {
     if (!open || collabs.length > 0 || !repo) return;
@@ -604,7 +604,7 @@ function LabelsEditor({
   const ref = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const isLocal = !!(issue as any)._local;
-  const repo = state.repoFullName as string | null;
+  const repo = (state.issueSourceRepo || state.repoFullName) as string | null;
 
   useEffect(() => {
     if (!open || repoLabels.length > 0 || !repo) return;
@@ -895,7 +895,8 @@ function DetailsTab({ issue }: { issue: Issue }) {
   }
 
   async function handleApply() {
-    if (!suggestion || !state.repoFullName) return;
+    const applyRepo = (state.issueSourceRepo || state.repoFullName) as string | null;
+    if (!suggestion || !applyRepo) return;
     setApplyLoading(true);
     setApplyStatus(null);
     const newBody = [
@@ -906,9 +907,11 @@ function DetailsTab({ issue }: { issue: Issue }) {
         : []),
     ].join('\n');
     try {
-      await updateIssue(state.repoFullName, issue.number, {
+      await updateIssue(applyRepo, issue.number, {
         title: suggestion.title,
         body: newBody,
+        assignees: undefined,
+        labels: undefined,
       });
       issue.title = suggestion.title;
       issue.body = newBody;
