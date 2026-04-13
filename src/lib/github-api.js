@@ -254,6 +254,19 @@ export async function fetchAllIssues(repo) {
   return issues;
 }
 
+/**
+ * Fetch repository metadata from GitHub.
+ * Returns the full repo object including `fork` (boolean) and `parent` (object) fields.
+ * Throws a parsed error if the request fails.
+ */
+export async function fetchRepoInfo(repo) {
+  const token = localStorage.getItem('gh_token');
+  const url = `https://api.github.com/repos/${repo}`;
+  const res = await fetch(url, { headers: buildHeaders(token) });
+  if (!res.ok) throw await parseGitHubError(res);
+  return res.json();
+}
+
 export async function fetchUserRepos() {
   const token = localStorage.getItem('gh_token');
   if (!token) return [];

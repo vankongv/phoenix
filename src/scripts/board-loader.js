@@ -1,4 +1,4 @@
-import { fetchAllIssues, createIssue, fetchProjectStatuses } from '../lib/github-api.js';
+import { fetchAllIssues, createIssue, fetchProjectStatuses, fetchRepoInfo } from '../lib/github-api.js';
 import { buildColumns, renderBoard, clearCardLaneOverride, isRecentlyMoved } from '../lib/board.js';
 import { loadTriageDuplicates } from '../lib/semantic.js';
 import { AGENT_BASE_URL } from '../lib/config.js';
@@ -92,9 +92,12 @@ async function _pollGitHubChanges(repo) {
     return;
   }
 
+  // Use the effective issue source (upstream for forks when useUpstream is set)
+  const issueRepo = state.issueSourceRepo || repo;
+
   let freshIssues;
   try {
-    freshIssues = await fetchAllIssues(repo);
+    freshIssues = await fetchAllIssues(issueRepo);
   } catch {
     return; // silently ignore transient errors
   }
@@ -168,6 +171,41 @@ function _startPolling(repo) {
   _pollTimer = setInterval(() => _pollGitHubChanges(repo), POLL_INTERVAL_MS);
 }
 
+// ── Fork source helpers ───────────────────────────────────────
+const FORK_PREF_KEY = (repo) => `pnx_fork_source_${repo}`;
+
+function _getForkPreference(repo) {
+  return localStorage.getItem(FORK_PREF_KEY(repo)); // 'upstream' | 'current' | null
+}
+
+function _saveForkPreference(repo, value) {
+  localStorage.setItem(FORK_PREF_KEY(repo), value);
+}
+
+function _updateForkToggleUI(useUpstream) {
+  const wrap = document.getElementById('fork-source-wrap');
+  if (!wrap) return;
+  wrap.classList.remove('hidden');
+  wrap.classList.add('flex');
+
+  const upstreamBtn = document.getElementById('fork-source-upstream');
+  const currentBtn = document.getElementById('fork-source-current');
+  if (!upstreamBtn || !currentBtn) return;
+
+  // Active style: filled blue; inactive: plain surface
+  const activeStyle = 'background:#dae2ff;color:#003d9b;font-weight:600;';
+  const inactiveStyle = 'background:#f8f9fd;color:#5c6079;';
+  upstreamBtn.style.cssText = useUpstream ? activeStyle : inactiveStyle;
+  currentBtn.style.cssText = useUpstream ? inactiveStyle : activeStyle;
+}
+
+function _hideForkToggle() {
+  const wrap = document.getElementById('fork-source-wrap');
+  if (!wrap) return;
+  wrap.classList.add('hidden');
+  wrap.classList.remove('flex');
+}
+
 // ── Load issues ──────────────────────────────────────────────
 export async function loadIssues(repoArg) {
   const repo = repoArg || $('repo-input').value.trim();
@@ -181,7 +219,31 @@ export async function loadIssues(repoArg) {
   state.repoFullName = repo; // Set early so other async code knows a repo is loading
 
   try {
-    state.allIssues = [...getLocalIssues(repo), ...await fetchAllIssues(repo)];
+    // Detect fork and resolve the effective issue source repo before loading issues.
+    // fetchRepoInfo is a single lightweight call; doing it first avoids a double-load.
+    let issueRepo = repo;
+    try {
+      const info = await fetchRepoInfo(repo);
+      if (info.fork && info.parent) {
+        const parentRepo = info.parent.full_name;
+        const useUpstream = _getForkPreference(repo) !== 'current'; // default: upstream
+        state.forkInfo = { parentRepo, useUpstream };
+        issueRepo = useUpstream ? parentRepo : repo;
+        state.issueSourceRepo = issueRepo;
+        _updateForkToggleUI(useUpstream);
+      } else {
+        state.forkInfo = null;
+        state.issueSourceRepo = repo;
+        _hideForkToggle();
+      }
+    } catch {
+      // Can't determine fork status (e.g. public repo, no token) — treat as non-fork
+      state.forkInfo = null;
+      state.issueSourceRepo = repo;
+      _hideForkToggle();
+    }
+
+    state.allIssues = [...getLocalIssues(repo), ...await fetchAllIssues(issueRepo)];
     state.duplicates = new Map();
     state.projectMeta = null;
     buildColumns();
@@ -403,6 +465,41 @@ export function initBoardLoader() {
     else state.allIssues.unshift(githubIssue);
     buildColumns();
     renderBoard(getFilters);
+  });
+
+  // ── Fork source toggle ────────────────────────────────────────
+  document.querySelectorAll('.fork-source-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const repo = state.repoFullName;
+      if (!repo || !state.forkInfo) return;
+
+      const useUpstream = btn.dataset.source === 'upstream';
+      state.forkInfo.useUpstream = useUpstream;
+      state.issueSourceRepo = useUpstream ? state.forkInfo.parentRepo : repo;
+      _saveForkPreference(repo, useUpstream ? 'upstream' : 'current');
+      _updateForkToggleUI(useUpstream);
+
+      // Reload issues from the newly selected source
+      showState('loading');
+      $('loading-text').textContent = `Fetching issues from ${state.issueSourceRepo}…`;
+      fetchAllIssues(state.issueSourceRepo)
+        .then((issues) => {
+          if (state.repoFullName !== repo) return;
+          state.allIssues = [...getLocalIssues(repo), ...issues];
+          state.duplicates = new Map();
+          state.projectMeta = null;
+          buildColumns();
+          populateFilters();
+          renderBoard(getFilters);
+          showState('board');
+          $('stat-open').textContent = `${state.allIssues.length} open issues`;
+        })
+        .catch((err) => {
+          showState('error');
+          $('error-text').textContent = err.message || 'Failed to fetch issues';
+          $('error-detail').textContent = err.userMessage || 'Check the repo name and token, then try again.';
+        });
+    });
   });
 
   // Restore repo history from SQLite on startup

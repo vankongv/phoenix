@@ -33,6 +33,27 @@
   >
     <option value="">All assignees</option>
   </select>
+  <!-- Fork issue source toggle — shown only when the loaded repo is a fork -->
+  <div id="fork-source-wrap" class="hidden items-center gap-1.5">
+    <span class="material-symbols-outlined text-on-surface-variant" style="font-size:13px">fork_right</span>
+    <span class="text-[11px] text-on-surface-variant">Issues from:</span>
+    <div class="flex rounded-lg overflow-hidden" style="border:1px solid rgba(195,198,214,0.7)">
+      <button
+        id="fork-source-upstream"
+        data-source="upstream"
+        class="fork-source-btn px-2.5 py-1 text-[11px] font-medium transition-colors"
+        title="Pull issues from the original source repository"
+      >Source repo</button>
+      <button
+        id="fork-source-current"
+        data-source="current"
+        class="fork-source-btn px-2.5 py-1 text-[11px] font-medium transition-colors"
+        style="border-left:1px solid rgba(195,198,214,0.7)"
+        title="Pull issues from this forked repository"
+      >This fork</button>
+    </div>
+  </div>
+
   <button
     id="new-issue-btn"
     class="hidden items-center gap-1 text-[11px] font-semibold text-on-primary px-3 py-1.5 rounded-lg transition-all active:scale-95"
