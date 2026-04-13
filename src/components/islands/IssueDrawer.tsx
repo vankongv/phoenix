@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { drawerSignal, closeDrawer, setDrawerTab, runsSignal, logsSignal, suggestionsSignal, dismissSuggestion } from '../../lib/signals.js';
-import { triggerImplement, cancelRun, pushRun } from '../../scripts/run-dispatcher.js';
-import { updateIssue, fetchIssueComments, createIssueComment, fetchOrgMembers, fetchRepoLabels, createRepoLabel } from '../../lib/github-api.js';
+import { triggerImplement, triggerAddressPRComments, cancelRun, pushRun } from '../../scripts/run-dispatcher.js';
+import { updateIssue, fetchIssueComments, createIssueComment, fetchOrgMembers, fetchRepoLabels, createRepoLabel, fetchPRReviewThreads } from '../../lib/github-api.js';
 import { getAgents, getTeams, getCodeEditor, getIssueTeam, setIssueTeam } from '../../lib/agents.js';
 import { AGENT_BASE_URL } from '../../lib/config.js';
 import { state } from '../../scripts/state.js';
@@ -30,6 +30,17 @@ interface Run {
   prUrl?: string | null;
   worktreePath?: string | null;
   actionType?: string;
+}
+
+interface PRReviewComment {
+  body: string;
+  path: string | null;
+  author: { login: string } | null;
+}
+
+interface PRReviewThread {
+  isResolved: boolean;
+  comments: PRReviewComment[];
 }
 
 interface LogEntry {
@@ -86,6 +97,10 @@ function getRunGroupStatus(group: RunGroup, isActive: boolean, activeStatus?: st
 type Tab = 'details' | 'ai' | 'logs';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+function isPullRequest(issue: Issue): boolean {
+  return issue.html_url?.includes('/pull/') ?? false;
+}
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -1336,10 +1351,36 @@ function AITab({ issue }: { issue: Issue }) {
   const [refinePrompt, setRefinePrompt] = useState('');
   const [pushLoading, setPushLoading] = useState(false);
 
+  // PR review threads — loaded when the drawer opens for a pull request
+  const [reviewThreads, setReviewThreads] = useState<PRReviewThread[] | null>(null);
+  const [threadsLoading, setThreadsLoading] = useState(false);
+  const [addressingPR, setAddressingPR] = useState(false);
+
+  const repo = (state.issueSourceRepo || state.repoFullName) as string | null;
+  const isPR = isPullRequest(issue);
+
+  useEffect(() => {
+    if (!isPR || !repo || (issue as any)._local) return;
+    setThreadsLoading(true);
+    fetchPRReviewThreads(repo, issue.number)
+      .then((threads: PRReviewThread[]) => setReviewThreads(threads))
+      .finally(() => setThreadsLoading(false));
+  }, [isPR, repo, issue.number]);
+
+  const unresolvedThreads = (reviewThreads ?? []).filter((t) => !t.isResolved);
+
   async function handlePush() {
     setPushLoading(true);
     await pushRun(issue.number);
     setPushLoading(false);
+  }
+
+  function handleAddressPRComments() {
+    if (!reviewThreads) return;
+    setAddressingPR(true);
+    triggerAddressPRComments(issue, reviewThreads);
+    setDrawerTab('logs');
+    setAddressingPR(false);
   }
 
   const isIdleOrFailed = status === 'idle' || status === 'failed';
@@ -1366,6 +1407,65 @@ function AITab({ issue }: { issue: Issue }) {
         </p>
         <p class="text-sm font-semibold text-on-surface leading-snug">{issue.title}</p>
       </div>
+
+      {/* Address PR Comments — visible only when this item is a PR with unresolved review threads */}
+      {isPR && (threadsLoading || unresolvedThreads.length > 0) && (
+        <div class="rounded-xl p-4 space-y-3" style="background:#edeef0">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined" style="font-size:16px;color:#0e7490">rate_review</span>
+            <p class="text-xs font-bold text-on-surface">Address PR Comments</p>
+            {!threadsLoading && unresolvedThreads.length > 0 && (
+              <span
+                class="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                style="background:#cffafe;color:#0e7490"
+              >
+                {unresolvedThreads.length} unresolved
+              </span>
+            )}
+          </div>
+          {threadsLoading ? (
+            <div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant/60">
+              <span class="material-symbols-outlined animate-spin" style="font-size:13px">autorenew</span>
+              Loading review comments…
+            </div>
+          ) : (
+            <>
+              <p class="text-[11px] text-on-surface-variant leading-relaxed">
+                The agent will read the unresolved reviewer comments and push fixes to the branch.
+              </p>
+              <div class="flex flex-col gap-1.5 max-h-36 overflow-y-auto" style="scrollbar-width:thin;scrollbar-color:#c3c6d6 transparent">
+                {unresolvedThreads.map((thread, i) => {
+                  const c = thread.comments[0];
+                  if (!c) return null;
+                  return (
+                    <div
+                      key={i}
+                      class="rounded-lg px-2.5 py-2 text-[11px]"
+                      style="background:#ffffff;border:1px solid #e1e2e4"
+                    >
+                      {c.path && (
+                        <p class="font-mono text-[10px] text-primary mb-0.5 truncate">{c.path}</p>
+                      )}
+                      <p class="text-on-surface-variant line-clamp-2 leading-snug">{c.body}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                disabled={addressingPR || status === 'running'}
+                onClick={handleAddressPRComments}
+                class="flex items-center justify-center gap-1.5 w-full text-on-primary text-xs font-semibold py-2 rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                style="background:linear-gradient(135deg,#0e7490,#0891b2)"
+              >
+                <span class="material-symbols-outlined" style="font-size:14px">
+                  {addressingPR ? 'autorenew' : 'rate_review'}
+                </span>
+                {addressingPR ? 'Starting…' : 'Address PR Comments'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Improve Issue — triage column only */}
       {isTriageCol && (

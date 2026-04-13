@@ -177,3 +177,48 @@ export function triggerRefine(issue, userPrompt = '') {
     agents.find((a) => a.id === 'refiner');
   refine(issue, { ..._agentConfig(agent, null), ...(userPrompt ? { userPrompt } : {}) });
 }
+
+/**
+ * Trigger an agent run to address unresolved PR review comments.
+ *
+ * @param {object} issue  GitHub issue/PR object (number, title, body, html_url, …)
+ * @param {Array<{isResolved:boolean, comments:Array<{body:string, path:string|null, author:{login:string}|null}>}>} reviewThreads
+ */
+export function triggerAddressPRComments(issue, reviewThreads) {
+  const unresolved = reviewThreads.filter((t) => !t.isResolved);
+  if (!unresolved.length) return;
+
+  const commentsContext = unresolved
+    .map((thread, i) => {
+      const c = thread.comments[0];
+      if (!c) return null;
+      const loc = c.path ? `\`${c.path}\`` : 'General comment';
+      const author = c.author?.login ? `@${c.author.login}: ` : '';
+      return `${i + 1}. ${loc}\n   ${author}${c.body}`;
+    })
+    .filter(Boolean)
+    .join('\n\n');
+
+  const syntheticIssue = {
+    ...issue,
+    title: `Address PR #${issue.number} review comments`,
+    body: [
+      `Address the following unresolved reviewer comments on pull request #${issue.number}:`,
+      '',
+      commentsContext,
+      '',
+      '---',
+      `Original PR: ${issue.html_url}`,
+      ...(issue.body ? ['', 'Original PR description:', issue.body] : []),
+    ].join('\n'),
+  };
+
+  const issueRepo = state.issueSourceRepo || state.repoFullName;
+  const agents = getAgents();
+  const agent =
+    agents.find((a) => a.actionType === 'implement' && a.id !== 'refiner') ??
+    agents.find((a) => a.actionType === 'implement') ??
+    agents.find((a) => a.id === 'implementer');
+
+  implement(syntheticIssue, issueRepo, _agentConfig(agent, null));
+}

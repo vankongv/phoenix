@@ -412,6 +412,56 @@ export async function ensureRepoLabel(repo, { name, color }) {
 }
 
 /**
+ * Fetch all review threads for a pull request via GraphQL.
+ * Each thread includes its `isResolved` flag and the first few comments.
+ * Returns an empty array when no token is set or on any error (silent degradation).
+ *
+ * @param {string} repo  "owner/repo"
+ * @param {number} prNumber  Pull request number
+ * @returns {Promise<Array<{isResolved:boolean, comments:Array<{body:string, path:string|null, author:{login:string}|null}>}>>}
+ */
+export async function fetchPRReviewThreads(repo, prNumber) {
+  const token = localStorage.getItem('gh_token');
+  if (!token) return [];
+
+  const [owner, name] = repo.split('/');
+  const query = `
+    query($owner: String!, $name: String!, $number: Int!) {
+      repository(owner: $owner, name: $name) {
+        pullRequest(number: $number) {
+          reviewThreads(first: 100) {
+            nodes {
+              isResolved
+              comments(first: 10) {
+                nodes {
+                  body
+                  path
+                  author { login }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  try {
+    const data = await graphqlRequest(query, { owner, name, number: prNumber });
+    const nodes = data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
+    return nodes.map((t) => ({
+      isResolved: t.isResolved ?? false,
+      comments: (t.comments?.nodes ?? []).map((c) => ({
+        body: c.body ?? '',
+        path: c.path ?? null,
+        author: c.author ?? null,
+      })),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Update a GitHub issue's title, body, assignees, and/or labels via PATCH.
  * Throws a parsed error if the request fails.
  */
