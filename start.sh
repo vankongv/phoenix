@@ -100,7 +100,7 @@ PIDS+=($!)
 
 # 3. Astro frontend (port 4321 by default)
 echo -e "  ${GREEN}▶${RESET} Frontend (Astro)  → http://localhost:4321"
-npm --prefix "$SCRIPT_DIR" run dev \
+npm --prefix "$SCRIPT_DIR" run dev -- --host 0.0.0.0 \
   >"$LOG_DIR/frontend.log" 2>&1 &
 PIDS+=($!)
 

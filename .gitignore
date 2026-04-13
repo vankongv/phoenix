@@ -24,3 +24,5 @@ htmlcov/
 # Build artefacts
 agent/*.egg-info/
 agent/dist/
+
+.env*
