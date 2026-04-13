@@ -18,6 +18,8 @@ import {
   logDelegation,
 } from '../lib/implementer.js';
 import { getAgents, getTeams, getIssueTeam, getGlobalAiKey } from '../lib/agents.js';
+import { moveCard } from '../lib/board.js';
+import { getFilters } from './board-loader.js';
 import { state } from './state.js';
 
 export { cancelRun, pushRun };
@@ -63,6 +65,13 @@ export async function triggerImplement(issue, overrideAgentId = null) {
       issueColId = colId;
       break;
     }
+  }
+
+  // Move issue to "In Progress" if it's in a pre-progress column
+  const PRE_PROGRESS = new Set(['triage', 'todo']);
+  if (issueColId && PRE_PROGRESS.has(issueColId)) {
+    moveCard(issue.number, issueColId, 'in_progress', getFilters);
+    issueColId = 'in_progress';
   }
 
   const teams = getTeams();

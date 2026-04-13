@@ -562,7 +562,7 @@ function _renderRunBar(run, colId, issue) {
     </div>`;
 }
 
-function moveCard(num, from, to, getFilters) {
+export function moveCard(num, from, to, getFilters) {
   const list = _state.columns[from].issues;
   const idx = list.findIndex((i) => i.number === num);
   if (idx === -1) return;
