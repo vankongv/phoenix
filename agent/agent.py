@@ -400,13 +400,13 @@ class ImplementerAgent:
             llm=llm,
             tools=[Tool(name=TerminalTool.name), Tool(name=FileEditorTool.name)],
         )
-        MAX_ITERATIONS = 25
+        max_iterations = self.request.max_iterations or 50
         self._conversation = Conversation(
             agent=agent,
             workspace=str(self.work_dir),
             callbacks=[_on_event],
             visualizer=None,  # no rich console output in server context
-            max_iteration_per_run=MAX_ITERATIONS,
+            max_iteration_per_run=max_iterations,
         )
 
         prompt = self._build_prompt()

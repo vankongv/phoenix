@@ -252,6 +252,7 @@ export async function implement(issue, repoFullName, agentConfig = {}) {
         ...(agentConfig.guardrailsNever ? { guardrails_never: agentConfig.guardrailsNever } : {}),
         ...(agentConfig.sampling ? { sampling: agentConfig.sampling } : {}),
         ...(agentConfig.autonomy ? { autonomy: agentConfig.autonomy } : {}),
+        ...(agentConfig.maxIterations ? { max_iterations: agentConfig.maxIterations } : {}),
       }),
     });
     if (!res.ok) throw new Error(`Agent server ${res.status}`);

@@ -1,4 +1,4 @@
-import { LANE_ACTIONS, CODE_EDITORS } from './constants.js';
+import { LANE_ACTIONS, CODE_EDITORS, DEFAULT_AGENT_MAX_ITERATIONS } from './constants.js';
 import { AGENT_BASE_URL } from './config.js';
 
 const DEFAULT_AGENTS = [
@@ -138,6 +138,19 @@ export function getGlobalAiKey() {
 export function setGlobalAiKey(key) {
   if (key) localStorage.setItem('pnx_ai_key', key);
   else localStorage.removeItem('pnx_ai_key');
+}
+
+// ── Agent max iterations ──────────────────────────────────────
+
+export function getAgentMaxIterations() {
+  const val = parseInt(localStorage.getItem('pnx_agent_max_iterations'), 10);
+  return val > 0 ? val : DEFAULT_AGENT_MAX_ITERATIONS;
+}
+
+export function setAgentMaxIterations(n) {
+  const val = parseInt(n, 10);
+  if (!Number.isFinite(val) || val < 1) return;
+  localStorage.setItem('pnx_agent_max_iterations', String(val));
 }
 
 // ── Code editor preference ────────────────────────────────────

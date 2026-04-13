@@ -38,6 +38,7 @@ class RunRequest(BaseModel):
     guardrails_never: Optional[str] = None      # things the agent must never do
     sampling: Optional[str] = None              # deterministic | balanced | creative
     autonomy: Optional[str] = None              # assist | semi-autonomous | autonomous
+    max_iterations: Optional[int] = Field(None, ge=1, description="Max agent iterations per run")
 
 
 class RunEvent(BaseModel):

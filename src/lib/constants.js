@@ -71,6 +71,8 @@ export function calcRunCost(inputTokens, outputTokens, model) {
   return (inputTokens / 1_000_000) * p.input + (outputTokens / 1_000_000) * p.output;
 }
 
+export const DEFAULT_AGENT_MAX_ITERATIONS = 50;
+
 export const LANE_ACTIONS = {
   triage: {
     label: 'Improve Issue',

@@ -125,6 +125,39 @@
 
             <div style="border-top:1px solid rgba(195,198,214,0.3)"></div>
 
+            <!-- Max iterations -->
+            <div>
+              <p class="text-[12px] font-semibold mb-1.5" style="color:#434654">Agent Max Iterations</p>
+              <p class="text-[11px] mb-2.5" style="color:#6b6f80">
+                Maximum number of iterations the agent can perform per run. Higher values allow the agent to tackle more complex tasks.
+              </p>
+              <div class="flex gap-2 items-center">
+                <input
+                  id="ai-max-iterations-input"
+                  type="number"
+                  min="1"
+                  step="1"
+                  class="w-28 text-[12px] px-3 py-2.5 rounded-lg font-mono"
+                  style="border:1.5px solid rgba(195,198,214,0.5);background:#f9f9fb;color:#191c1e;outline:none"
+                />
+                <button
+                  id="ai-max-iterations-save"
+                  class="flex items-center gap-1.5 text-[12px] font-semibold px-3.5 py-2 rounded-lg transition-all active:scale-95 shrink-0"
+                  style="background:#003d9b;color:#fff"
+                >
+                  Save
+                </button>
+              </div>
+              <p id="ai-max-iterations-saved-msg" class="text-[11px] mt-2 hidden" style="color:#1a7a4a">
+                Saved.
+              </p>
+              <p id="ai-max-iterations-error-msg" class="text-[11px] mt-2 hidden" style="color:#ba1a1a">
+                Please enter a valid number (1 or greater).
+              </p>
+            </div>
+
+            <div style="border-top:1px solid rgba(195,198,214,0.3)"></div>
+
             <!-- API key -->
             <div>
               <p class="text-[12px] font-semibold mb-2" style="color:#434654">API Key</p>
@@ -312,8 +345,8 @@
 </style>
 
 <script>
-  import { CODE_EDITORS } from '../lib/constants.js';
-  import { getCodeEditor, setCodeEditor, getGlobalAiKey, setGlobalAiKey, getGlobalAiProvider, setGlobalAiProvider } from '../lib/agents.js';
+  import { CODE_EDITORS, DEFAULT_AGENT_MAX_ITERATIONS } from '../lib/constants.js';
+  import { getCodeEditor, setCodeEditor, getGlobalAiKey, setGlobalAiKey, getGlobalAiProvider, setGlobalAiProvider, getAgentMaxIterations, setAgentMaxIterations } from '../lib/agents.js';
   import { clearHistory } from '../lib/implementer.js';
   import { clearCardLanes } from '../lib/board.js';
 
