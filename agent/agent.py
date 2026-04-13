@@ -677,7 +677,7 @@ class ImplementerAgent:
         files_list = "\n".join(f"- `{f}`" for f in result.files_changed) or "_No tracked files_"
         title = f"feat: implement #{self.request.issue_number}: {self._issue.title}"
         body = (
-            f"Closes #{self.request.issue_number}\n\n"
+            f"Fixes #{self.request.issue_number}\n\n"
             f"## Summary\n{result.summary}\n\n"
             f"## Files changed\n{files_list}\n\n"
             f"---\n_Implemented by Phoenix_"
