@@ -285,6 +285,13 @@ export async function loadIssues(repoArg) {
     }).catch(() => {});
     $('new-issue-btn').classList.remove('hidden');
     $('new-issue-btn').classList.add('flex');
+    const refreshBtn = $('refresh-issues-btn');
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.querySelector('.material-symbols-outlined').classList.remove('animate-spin');
+      refreshBtn.classList.remove('hidden');
+      refreshBtn.classList.add('flex');
+    }
 
     // Sync header switcher
     repoSwitcherSelect.classList.remove('hidden');
@@ -399,6 +406,14 @@ export function initBoardLoader() {
   function closeNewIssueModal() {
     $('new-issue-modal').classList.add('hidden');
   }
+
+  $('refresh-issues-btn').addEventListener('click', () => {
+    if (!state.repoFullName) return;
+    const btn = $('refresh-issues-btn');
+    btn.disabled = true;
+    btn.querySelector('.material-symbols-outlined').classList.add('animate-spin');
+    loadIssues(state.repoFullName);
+  });
 
   $('new-issue-btn').addEventListener('click', openNewIssueModal);
   $('new-issue-modal-close').addEventListener('click', closeNewIssueModal);
