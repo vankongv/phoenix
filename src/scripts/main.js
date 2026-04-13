@@ -12,6 +12,8 @@ import {
   planningPanelOpenSignal,
   openDrawer,
 } from '../lib/signals.js';
+import { bus } from '../lib/event-bus.js';
+import { initFavicon } from '../lib/favicon.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -29,6 +31,7 @@ initTokenRepo();
 // ── Run updates → board only (islands auto-update via signals) ─
 onRunUpdate(() => {
   if (state.allIssues.length > 0) renderBoard(getFilters);
+  bus.emit('run:update');
 });
 
 // ── Signal-based panel toggles (Preact islands) ───────────────
@@ -57,24 +60,33 @@ async function checkServices() {
     lbl.textContent = label;
   };
 
+  let agentOk = false;
+  let semanticOk = false;
+
   try {
     const r = await fetch(`${AGENT_BASE_URL}/health`, { signal: AbortSignal.timeout(3000) });
-    const ok = r.ok;
-    setHealth('health-agent-dot', 'health-agent-label', ok, ok ? 'online' : 'error');
+    agentOk = r.ok;
+    setHealth('health-agent-dot', 'health-agent-label', agentOk, agentOk ? 'online' : 'error');
   } catch {
     setHealth('health-agent-dot', 'health-agent-label', false, 'offline');
   }
 
   try {
     await fetch(`${SEMANTIC_BASE_URL}/health`, { signal: AbortSignal.timeout(3000) });
+    semanticOk = true;
     setHealth('health-semantic-dot', 'health-semantic-label', true, 'online');
   } catch {
     setHealth('health-semantic-dot', 'health-semantic-label', false, 'offline');
   }
+
+  bus.emit('service:health', { agent: agentOk, semantic: semanticOk });
 }
 
 checkServices();
 setInterval(checkServices, 30_000);
+
+// ── Favicon ──────────────────────────────────────────────────
+initFavicon();
 
 // ── Init ─────────────────────────────────────────────────────
 showState('empty');
