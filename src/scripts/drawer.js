@@ -330,7 +330,7 @@ function _renderDetails(issue) {
           : []),
       ].join('\n');
       try {
-        await updateIssue(state.issueSourceRepo || state.repoFullName, issue.number, {
+        await updateIssue(state.repoFullName, issue.number, {
           title: suggestion.title,
           body: newBody,
         });
@@ -344,7 +344,13 @@ function _renderDetails(issue) {
         applyBtn.innerHTML =
           '<span class="material-symbols-outlined" style="font-size:11px">cloud_upload</span>Apply to GitHub';
         if (applyStatus) {
-          applyStatus.textContent = err.userMessage || err.message;
+          let msg = err.userMessage || err.message;
+          if (state.forkInfo && err.status === 404) {
+            msg = `Issue #${issue.number} was not found in ${state.repoFullName}. This issue originates from the upstream repo (${state.forkInfo.parentRepo}) and may not exist in your fork.`;
+          } else if (state.forkInfo && err.status === 403) {
+            msg = `Permission denied on ${state.repoFullName}. Ensure your token has write access to this fork.`;
+          }
+          applyStatus.textContent = msg;
           applyStatus.style.color = '#ba1a1a';
           applyStatus.classList.remove('hidden');
         }
@@ -546,7 +552,7 @@ export async function triggerImplement(issue, overrideAgentId = null) {
 
   const teams = getTeams();
   const agents = getAgents();
-  const issueRepo = state.issueSourceRepo || state.repoFullName;
+  const issueRepo = state.repoFullName;
 
   // If an explicit agent was picked (no team), run it directly
   if (overrideAgentId) {
