@@ -11,6 +11,31 @@ const _require = createRequire(import.meta.url);
  * the import, load the module in Node.js, serialise all four exported Maps and
  * return pure ESM that reconstructs them from JSON.
  */
+function ariaQueryEsmPlugin() {
+  return {
+    name: 'aria-query-esm',
+    enforce: 'pre',
+    resolveId(id) {
+      if (id === 'aria-query') return '\0virtual:aria-query';
+    },
+    load(id) {
+      if (id !== '\0virtual:aria-query') return;
+
+      const mod = _require('aria-query');
+      const ser = (map) => JSON.stringify([...map.entries()]);
+
+      return [
+        `export const aria         = new Map(${ser(mod.aria)});`,
+        `export const dom          = new Map(${ser(mod.dom)});`,
+        `export const roles        = new Map(${ser(mod.roles)});`,
+        `export const elementRoles = new Map(${ser(mod.elementRoles)});`,
+        `export const roleElements = new Map(${ser(mod.roleElements)});`,
+        `export default { aria, dom, roles, elementRoles, roleElements };`,
+      ].join('\n');
+    },
+  };
+}
+
 function axobjectQueryEsmPlugin() {
   return {
     name: 'axobject-query-esm',
@@ -40,6 +65,6 @@ function axobjectQueryEsmPlugin() {
 export default defineConfig({
   integrations: [preact({ include: ['**/islands/**'] })],
   vite: {
-    plugins: [tailwindcss(), axobjectQueryEsmPlugin()],
+    plugins: [tailwindcss(), ariaQueryEsmPlugin(), axobjectQueryEsmPlugin()],
   },
 });

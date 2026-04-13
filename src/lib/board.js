@@ -299,7 +299,7 @@ function buildCard(issue, colId) {
       pushToGitHubBtn.disabled = true;
       pushToGitHubBtn.textContent = 'Pushing…';
       try {
-        const created = await createIssue(_state.repoFullName, { title: issue.title, body: issue.body });
+        const created = await createIssue(_state.issueSourceRepo || _state.repoFullName, { title: issue.title, body: issue.body });
         window.dispatchEvent(new CustomEvent('pnx:promote-local-issue', {
           detail: { localId: issue._localId, localNum: issue.number, githubIssue: created },
         }));

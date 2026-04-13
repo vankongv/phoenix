@@ -78,8 +78,11 @@ async def create_worktree(req: WorktreeRequest) -> dict:
 @router.post("/open-editor")
 async def open_editor(req: OpenEditorRequest) -> dict:
     p = Path(req.path).resolve()
-    tmp = Path(tempfile.gettempdir())
-    if not str(p).startswith(str(tmp / "pnx-")):
+    allowed = [
+        BASE_REPOS_DIR.resolve(),
+        Path(tempfile.gettempdir()).resolve(),
+    ]
+    if not any(str(p).startswith(str(a)) for a in allowed):
         raise HTTPException(status_code=400, detail="Path outside allowed worktree area")
     asyncio.create_task(
         asyncio.create_subprocess_exec(

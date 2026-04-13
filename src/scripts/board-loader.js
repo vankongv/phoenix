@@ -427,7 +427,7 @@ export function initBoardLoader() {
     $('new-issue-error').classList.add('hidden');
 
     try {
-      const created = await createIssue(state.repoFullName, {
+      const created = await createIssue(state.issueSourceRepo || state.repoFullName, {
         title,
         body,
         labels: labels.length ? labels : undefined,

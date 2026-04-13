@@ -330,7 +330,7 @@ function _renderDetails(issue) {
           : []),
       ].join('\n');
       try {
-        await updateIssue(state.repoFullName, issue.number, {
+        await updateIssue(state.issueSourceRepo || state.repoFullName, issue.number, {
           title: suggestion.title,
           body: newBody,
         });
@@ -546,12 +546,13 @@ export async function triggerImplement(issue, overrideAgentId = null) {
 
   const teams = getTeams();
   const agents = getAgents();
+  const issueRepo = state.issueSourceRepo || state.repoFullName;
 
   // If an explicit agent was picked (no team), run it directly
   if (overrideAgentId) {
     const agent = agents.find((a) => a.id === overrideAgentId);
     if (agent) {
-      implement(issue, state.repoFullName, _agentConfig(agent, null));
+      implement(issue, issueRepo, _agentConfig(agent, null));
       return;
     }
   }
@@ -611,7 +612,7 @@ export async function triggerImplement(issue, overrideAgentId = null) {
         }
         if (nextAgent) logDelegation(issue.number, agent.name, nextAgent.name);
       } else {
-        implement(currentIssue, state.repoFullName, _agentConfig(agent, prodTeam));
+        implement(currentIssue, issueRepo, _agentConfig(agent, prodTeam));
         return;
       }
     }
@@ -627,7 +628,7 @@ export async function triggerImplement(issue, overrideAgentId = null) {
       if (agent.actionType === 'refine') {
         refine(issue, _agentConfig(agent, prodTeam));
       } else {
-        implement(issue, state.repoFullName, _agentConfig(agent, prodTeam));
+        implement(issue, issueRepo, _agentConfig(agent, prodTeam));
       }
     });
     return;
@@ -638,7 +639,7 @@ export async function triggerImplement(issue, overrideAgentId = null) {
     agents.find((a) => a.actionType === 'implement') ??
     agents.find((a) => a.id === 'implementer');
 
-  implement(issue, state.repoFullName, _agentConfig(agent, null));
+  implement(issue, issueRepo, _agentConfig(agent, null));
 }
 
 // ── AI Actions tab ───────────────────────────────────────────

@@ -971,15 +971,16 @@ function _bindDiagramModal() {
 // ── Generate GitHub Issues from selected notes ────────────────────────────────
 
 function _getRepoOptions() {
+  const activeRepo = state.issueSourceRepo || state.repoFullName;
   const repos = state.repos?.length
     ? state.repos.map((r) => r.full_name)
-    : state.repoFullName
-      ? [state.repoFullName]
+    : activeRepo
+      ? [activeRepo]
       : [];
   return repos.length
     ? repos
         .map(
-          (r) => `<option value="${r}"${r === state.repoFullName ? ' selected' : ''}>${r}</option>`
+          (r) => `<option value="${r}"${r === activeRepo ? ' selected' : ''}>${r}</option>`
         )
         .join('')
     : `<option value="">No repositories — load one from the board first</option>`;
