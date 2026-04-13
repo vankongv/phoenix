@@ -24,4 +24,4 @@ ENV PNX_REPOS_DIR=/home/ponenix/.pnx/repos
 
 EXPOSE 8001
 
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD python -m uvicorn app:app --host 0.0.0.0 --port "${AGENT_PORT:-8001}"

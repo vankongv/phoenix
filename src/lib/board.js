@@ -123,9 +123,10 @@ async function _syncStatusToGitHub(num, toCol) {
     .map((l) => l.name);
   const newLabels = targetLabel ? [...nonStatusLabels, targetLabel.name] : nonStatusLabels;
 
+  const issueRepo = _state.issueSourceRepo || _state.repoFullName;
   try {
-    if (targetLabel) await ensureRepoLabel(_state.repoFullName, targetLabel);
-    const updated = await updateIssue(_state.repoFullName, num, { labels: newLabels });
+    if (targetLabel) await ensureRepoLabel(issueRepo, targetLabel);
+    const updated = await updateIssue(issueRepo, num, { labels: newLabels });
     const idx = _state.allIssues.findIndex((i) => i.number === num);
     if (idx !== -1) _state.allIssues[idx] = { ..._state.allIssues[idx], labels: updated.labels };
   } catch (err) {

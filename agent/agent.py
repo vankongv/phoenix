@@ -33,6 +33,10 @@ _SAMPLING_TEMP: dict[str, float] = {
     "balanced":      0.5,
     "creative":      1.0,
 }
+
+# Per-issue lock: serialises the branch rename in _commit_local so concurrent
+# runs for the same issue number don't race on the target branch name.
+_commit_locks: dict[str, asyncio.Lock] = {}
 from models import RunEvent, RunRequest
 from registry import AgentResult, _runs
 
@@ -145,6 +149,7 @@ class ImplementerAgent:
             result = await self._run_agent()
             if not result.success:
                 await self.emit("error", {"message": result.error or "Agent run failed"})
+                asyncio.create_task(self._cleanup_worktree())
                 return result
             await self._commit_local(result)
             if self.request.autonomy == "autonomous":
@@ -169,6 +174,9 @@ class ImplementerAgent:
             return result
         except Exception as exc:
             await self.emit("error", {"message": str(exc)})
+            # Clean up the worktree on any failure path so stale branches and
+            # worktree directories don't accumulate across retries.
+            asyncio.create_task(self._cleanup_worktree())
             return AgentResult(success=False, error=str(exc))
         finally:
             await self.emit("close", {})
@@ -652,23 +660,54 @@ class ImplementerAgent:
             current_branch = self._worktree_branch
 
         if current_branch == self._worktree_branch and result.branch_name != self._worktree_branch:
-            target = result.branch_name
-            code, err = await self._git("branch", "-m", self._worktree_branch, target)
-            if code != 0:
-                if "already exists" in err:
-                    counter = 2
-                    while counter <= 99:
-                        candidate = f"{result.branch_name}-{counter}"
-                        code, err = await self._git("branch", "-m", self._worktree_branch, candidate)
-                        if code == 0:
-                            target = candidate
-                            break
-                        counter += 1
+            # Serialise the rename per issue so concurrent retries don't race on
+            # the same target branch name.
+            issue_key = f"{self.request.repo_full_name}:{self.request.issue_number}"
+            if issue_key not in _commit_locks:
+                _commit_locks[issue_key] = asyncio.Lock()
+            async with _commit_locks[issue_key]:
+                # Prune stale worktree references first so orphaned branches (from
+                # crashed previous runs) can be deleted — git refuses to delete a
+                # branch that is "checked out" in a worktree that no longer exists.
+                await self._git("worktree", "prune", cwd=self._base_dir)
+                # If result.branch_name is still live in another worktree (directory
+                # on disk, so prune left it), force-remove that worktree before
+                # deleting the branch.  Scan the list rather than parsing error-
+                # message text, which differs across git versions.
+                rc_wl, wt_out = await self._git_out(
+                    "worktree", "list", "--porcelain", cwd=self._base_dir
+                )
+                if rc_wl == 0:
+                    wt_path: Optional[str] = None
+                    for line in wt_out.splitlines():
+                        if line.startswith("worktree "):
+                            wt_path = line[len("worktree "):].strip()
+                        elif line.startswith("branch ") and result.branch_name in line:
+                            if wt_path and wt_path != str(self._base_dir):
+                                await self._git(
+                                    "worktree", "remove", "--force", wt_path, cwd=self._base_dir
+                                )
+                            wt_path = None
+                # Delete the stale target branch (ignore failure when absent).
+                await self._git("branch", "-D", result.branch_name, cwd=self._base_dir)
+                target = result.branch_name
+                code, err = await self._git("branch", "-m", self._worktree_branch, target)
+                if code != 0:
+                    if "already exists" in err:
+                        # Cleanup wasn't enough — fall back to a suffixed name.
+                        counter = 2
+                        while counter <= 99:
+                            candidate = f"{result.branch_name}-{counter}"
+                            code, err = await self._git("branch", "-m", self._worktree_branch, candidate)
+                            if code == 0:
+                                target = candidate
+                                break
+                            counter += 1
+                        else:
+                            raise RuntimeError(f"git branch -m: {err}")
                     else:
                         raise RuntimeError(f"git branch -m: {err}")
-                else:
-                    raise RuntimeError(f"git branch -m: {err}")
-            current_branch = target
+                current_branch = target
 
         self._worktree_branch = current_branch
         result.branch_name = current_branch

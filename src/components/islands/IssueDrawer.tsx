@@ -895,7 +895,7 @@ function DetailsTab({ issue }: { issue: Issue }) {
   }
 
   async function handleApply() {
-    const applyRepo = state.repoFullName as string | null;
+    const applyRepo = (state.issueSourceRepo || state.repoFullName) as string | null;
     if (!suggestion || !applyRepo) return;
     setApplyLoading(true);
     setApplyStatus(null);
@@ -931,22 +931,10 @@ function DetailsTab({ issue }: { issue: Issue }) {
       '',
       suggestion.description,
       '',
-      ...(suggestion.acceptance_criteria?.length
-        ? ['### Acceptance Criteria', ...(suggestion.acceptance_criteria as string[]).map((c) => `- [ ] ${c}`)]
-        : []),
+      '### Acceptance Criteria',
+      ...(suggestion.acceptance_criteria ?? []).map((c: string) => `- [ ] ${c}`),
     ].join('\n');
-    try {
-      await navigator.clipboard.writeText(md);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = md;
-      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
+    await navigator.clipboard.writeText(md);
     setCopyLabel('Copied!');
     setTimeout(() => setCopyLabel('Copy Markdown'), 1500);
   }
