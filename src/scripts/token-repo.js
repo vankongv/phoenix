@@ -1,4 +1,4 @@
-import { fetchUserRepos } from '../lib/github-api.js';
+import { fetchUserRepos, searchPublicRepos } from '../lib/github-api.js';
 import { escHtml } from '../lib/formatters.js';
 import { state } from './state.js';
 import { loadIssues } from './board-loader.js';
@@ -28,6 +28,28 @@ export async function loadUserRepos() {
     $('repo-fetch-error-text').textContent = err.userMessage || 'Could not load repos.';
     showRepoPanel('repo-fetch-error');
   }
+}
+
+function renderPublicRepoList(repos) {
+  const list = $('repo-public-list');
+  list.innerHTML = '';
+  const userRepoNames = new Set(state.repos.map((r) => r.full_name));
+  const filtered = repos.filter((r) => !userRepoNames.has(r.full_name));
+  if (!filtered.length) {
+    $('repo-public-results').classList.add('hidden');
+    return;
+  }
+  filtered.forEach((repo) => {
+    const btn = document.createElement('button');
+    btn.dataset.repo = repo.full_name;
+    btn.className =
+      'repo-list-item w-full text-left px-2 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container transition-colors flex items-center gap-1.5';
+    btn.innerHTML = `
+      <span class="material-symbols-outlined text-on-surface-variant/50 shrink-0" style="font-size:13px">public</span>
+      <span class="truncate">${escHtml(repo.full_name)}</span>`;
+    list.appendChild(btn);
+  });
+  $('repo-public-results').classList.remove('hidden');
 }
 
 function renderRepoList(repos) {
@@ -118,6 +140,9 @@ export function initTokenRepo() {
     $('repo-selected-wrap').classList.remove('hidden');
     $('repo-list-wrap').classList.add('hidden');
     $('repo-search').value = '';
+    $('repo-public-results').classList.add('hidden');
+    $('repo-public-list').innerHTML = '';
+    $('repo-my-label').classList.add('hidden');
     $('repo-list')
       .querySelectorAll('.repo-list-item')
       .forEach((b) => b.classList.remove('hidden'));
@@ -127,17 +152,51 @@ export function initTokenRepo() {
   $('repo-change-btn').addEventListener('click', () => {
     $('repo-selected-wrap').classList.add('hidden');
     $('repo-list-wrap').classList.remove('hidden');
+    $('repo-public-results').classList.add('hidden');
+    $('repo-public-list').innerHTML = '';
+    $('repo-my-label').classList.add('hidden');
     $('repo-search').focus();
   });
 
-  // Repo search filter
+  // Repo search filter + public repo search
+  let _searchTimer = null;
   $('repo-search').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
+    const q = e.target.value.toLowerCase().trim();
     $('repo-list')
       .querySelectorAll('.repo-list-item')
-      .forEach((btn) => {
-        btn.classList.toggle('hidden', !btn.dataset.repo.toLowerCase().includes(q));
-      });
+      .forEach((btn) => btn.classList.toggle('hidden', !!q && !btn.dataset.repo.toLowerCase().includes(q)));
+    $('repo-my-label').classList.toggle('hidden', !q);
+    clearTimeout(_searchTimer);
+    if (!q) {
+      $('repo-public-results').classList.add('hidden');
+      $('repo-public-list').innerHTML = '';
+      return;
+    }
+    _searchTimer = setTimeout(async () => {
+      try {
+        const results = await searchPublicRepos(q);
+        renderPublicRepoList(results);
+      } catch {
+        // best-effort; silently suppress
+      }
+    }, 400);
+  });
+
+  // Public repo list click (event delegation)
+  $('repo-public-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-repo]');
+    if (!btn) return;
+    const repo = btn.dataset.repo;
+    $('repo-input').value = repo;
+    loadIssues(repo);
+    $('repo-selected-name').textContent = repo;
+    $('repo-selected-wrap').classList.remove('hidden');
+    $('repo-list-wrap').classList.add('hidden');
+    $('repo-search').value = '';
+    $('repo-public-results').classList.add('hidden');
+    $('repo-public-list').innerHTML = '';
+    $('repo-my-label').classList.add('hidden');
+    $('repo-list').querySelectorAll('.repo-list-item').forEach((b) => b.classList.remove('hidden'));
   });
 
   // Manual fallback toggle

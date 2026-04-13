@@ -57,11 +57,18 @@
       <input
         id="repo-search"
         type="text"
-        placeholder="Filter repos…"
+        placeholder="Search repos…"
         class="w-full bg-surface-container-lowest px-2.5 py-1.5 text-xs text-on-surface placeholder:text-on-surface-variant/40 rounded-lg mb-1.5"
         style="border:1px solid rgba(195,198,214,0.5)"
       />
-      <div id="repo-list" class="overflow-y-auto" style="max-height:200px"></div>
+      <div class="overflow-y-auto" style="max-height:240px">
+        <p id="repo-my-label" class="hidden text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/40 px-2 mb-0.5">My repos</p>
+        <div id="repo-list"></div>
+        <div id="repo-public-results" class="hidden">
+          <p class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/40 px-2 mt-2 mb-0.5">Public repos</p>
+          <div id="repo-public-list"></div>
+        </div>
+      </div>
     </div>
 
     <!-- State: error fetching repos -->

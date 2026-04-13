@@ -133,6 +133,15 @@ export async function fetchUserRepos() {
   return res.json();
 }
 
+export async function searchPublicRepos(query) {
+  const token = localStorage.getItem('gh_token');
+  const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&per_page=8`;
+  const res = await fetch(url, { headers: buildHeaders(token) });
+  if (!res.ok) throw await parseGitHubError(res);
+  const data = await res.json();
+  return data.items;
+}
+
 /**
  * Create a new GitHub issue via POST.
  * Throws a parsed error if the request fails.
